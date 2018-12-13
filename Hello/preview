@@ -1,0 +1,137 @@
+# Librería Carga Multimedia "UploadMultimediaLib"
+
+UploadMultimediaLib es una librería que unifica la forma en la que 
+se envían archivos multimedia aportando la funcionalidad de realizarlos
+asíncronos, es decir permite realizar los envíos al mismo tiempo que continuas 
+con el proceso normal de tu aplicación. Así al momento del envió final 
+distribuir la carga de trabajo y reducir el tiempo. 
+
+# Índice 
+1. Configurar Construcción Gradle
+2. Servicios 
+	 * Video 
+3. Códigos de respuesta
+
+
+# Configurar Construcción Gradle
+
+gradle Project 	
+
+bloque buildscript
+buildscript {
+    
+    dependencies {
+        classpath "io.realm:realm-gradle-plugin:5.1.0"
+    }
+}
+
+bloque allprojects
+allprojects {
+    repositories {
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://github.com/WickeDev/stetho-realm/raw/master/maven-repo' }
+    }
+}
+
+gradle app
+
+raíz gradle app
+apply plugin: 'realm-android'
+
+La librería al estar en un repositorio privado de profuturo necesitas asignarle permisos y ubicación 
+de donde se encuentran. esto lo realizaras de la siguiente manera
+
+bloque repositories 
+repositories {
+    maven {
+        credentials {
+            username 'Android_Develop'
+            password 'Android_Develop'
+        }
+        url "http://www.profuturo.mx/nexus/repository/maven-public/"
+    }
+}
+
+bloque dependencies 
+dependencies {
+    implementation "com.profuturo.afore:uploadmultimedialib:1.1.1.DEBUG@aar"
+
+    implementation('com.github.ihsanbal:LoggingInterceptor:2.0.0') {
+        exclude group: 'org.json', module: 'json'
+    }
+
+    implementation 'com.facebook.stetho:stetho:1.5.0'
+    implementation 'com.uphyca:stetho_realm:2.2.2'
+    implementation 'com.birbit:android-priority-jobqueue:2.0.1'
+    implementation 'com.squareup.retrofit2:converter-gson:2.2.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.2.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.2.0'
+
+    implementation 'com.profuturo.afore:zip4j:1.3.2@jar'
+}
+
+NOTA: en algunas aplicaciones de profuturo ya se usa la librería zip4j.jar de forma local 
+de ser así se debe eliminar la instrucción implementation files('libs/zip4j_1.3.2.jar')
+y el jar y consumirla con la dependencia externa implementation 'com.profuturo.afore:zip4j:1.3.2@jar'
+
+Servicios
+
+La librería expone sus procesos por medio de una clase de acceso llamada UploadMultimediaController
+que ejecuta todos los servicios disponibles para las aplicaciones anfitrionas 
+
+Video
+declaración de variable 
+public UploadMultimediaController controller;
+
+inicialización 
+controller = UploadMultimediaController.getInstance(getContext(), Constantes.ORIGEN + "");
+
+descripción de procesos 
+
+Creación de un zip que divide en n número de partes de igual o menor tamaño a 
+1 MB para después realizar el envío de cada una de esas partes
+hashExpediente.- Identificador único del trámite (CURP, nss, cuenta, idtramite)
+pathFile.- ruta del archivo de video a enviar en formato mp4 (./Video/ABCDE/video_compressed.mp4)
+
+controller.uploadVideo(String hashExpediente, String pathFile)
+
+Verifica que todas las partes que componen el zip del video se recibieron correctamente 
+y en caso contrario envía las partes faltantes
+hashExpediente.- Identificador único del trámite (CURP, nss, cuenta, idtramite)
+searchNameVideo.- Nombre del video que se envía especificando formato mp4 en el nombre (video_compressed.mp4) 
+listener.- para utilizar esta función utilizar interfaz UploadMultimediaController.MultimediaLibrary
+controller.isSendVideo(String hashExpediente, String searchNameVideo, MultimediaLibrary listener)
+
+Interfaz UploadMultimediaController.MultimediaLibrary recibe información de ciertos eventos que ocurren
+dentro de la librería y devuelve el control después de ciertos eventos 
+NOTA: necesaria al momento de implementar isSendVideo
+requestCode.- tipo de proceso que se mandó a llamar
+resultStatus.- código de respuesta de acción
+data.- información o datos adicionales al código de respuesta
+public void onMultimediaLibraryResult(int requestCode, int resultStatus, String data) {    }
+
+Elimina toda la información relacionada al video de un expediente en especifico 
+searchKeyHashExp.- Identificador único del trámite (CURP, nss, cuenta, idtramite)
+controller.deleteVideo(String searchKeyHashExp);
+
+Ejemplo para implementación en conjunto con librería de video
+
+
+Códigos de respuesta 
+
+    //region onMultimediaLibraryResult SERVICES
+    public static final int REQUEST_CODE_IMAGE = 10;
+    public static final int REQUEST_CODE_VIDEO = 20;
+    //endregion
+
+    //region onMultimediaLibraryResult CODES --
+    public static final int RESULT_CODE_SUCCESS = 200;
+    public static final int RESULT_CODE_PERMISSION = 300;
+    public static final int RESULT_CODE_ERROR = 400;
+    public static final int RESULT_CODE_FAIL_LIBRARY = 500;
+    //endregion
+
+
+
+
+
